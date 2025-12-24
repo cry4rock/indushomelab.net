@@ -1,5 +1,5 @@
 ---
-title: "Edge Platform on Raspberry Pi"
+title: "Edge Platform on Raspberry Pi 3 Model B"
 date: 2025-12-24
 draft: false
 tags:
@@ -80,30 +80,32 @@ The goal is not just to run containers — but to build:
 
 ### Phase 2 – Container Platform
 - Install Docker
-
+```shell
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 newgrp docker
-
+```
 - Validate container runtime
-
+```shell
 docker run hello-world
-
+```
 - Install Docker Compose plugin
-
+```shell
 sudo apt install docker-compose -y
 docker-compose version
-
+```
 - Define compose structure
-
+```shell
 mkdir -p ~/edge-platform/{infra,apps,observability,docs}
+```
 
+```text
 edge-platform/
 ├── infra/              # reverse proxy, networking
 ├── observability/      # prometheus, grafana
 ├── apps/               # workloads (later)
 ├── docs/               # local docs / diagrams
-
+```
 
 ### Phase 3 – Networking & Security
 - Reverse proxy
@@ -111,6 +113,12 @@ edge-platform/
 - Service exposure
 
 ### Phase 4 – Observability
+- Create observability directory
+```shell
+cd ~/edge-platform
+mkdir -p observability/node-exporter
+cd observability/node-exporter
+```
 - Metrics collection
 - Dashboards
 - Alerts (future)
@@ -151,15 +159,16 @@ Swap acts as a pressure relief valve, preventing:
 For this edge platform, increasing swap is mandatory.
 
 **Current System State**
+```shell
 free -h
-
+```
 
 Typical output before change:
-
+```text
               total        used        free
 Mem:           982Mi        380Mi        120Mi
 Swap:          512Mi        138Mi        374Mi
-
+```
 
 The default 512 MB swap is insufficient for containerized workloads.
 
@@ -172,51 +181,57 @@ Use case	Docker + observability
 ###Step-by-Step: Increase Swap to 2 GB
 
 **1️⃣ Disable current swap**
+```shell
 sudo dphys-swapfile swapoff
-
+```
 **2️⃣ Edit swap configuration**
+```shell
 sudo nano /etc/dphys-swapfile
-
+```
 Locate:
-
+```yaml
 CONF_SWAPSIZE=512
-
+```
 
 Change to:
-
+```yaml
 CONF_SWAPSIZE=2048
-
+```
 
 Save and exit (CTRL+O, ENTER, CTRL+X).
 
 **3️⃣ Recreate the swap file**
+```shell
 sudo dphys-swapfile setup
-
+```
 
 This recreates the swap file with the new size.
 
 **4️⃣ Re-enable swap**
+```shell
 sudo dphys-swapfile swapon
-
+```
 **5️⃣ Verify swap is active**
+```shell
 free -h
-
+```
 
 Expected output:
-
+```text
               total        used        free
 Mem:           982Mi        380Mi        120Mi
 Swap:          2.0Gi        0Mi          2.0Gi
-
+```
 **Validation Checks**
+```shell
 swapon --show
-
+```
 
 You should see:
-
+```text
 NAME       TYPE SIZE USED PRIO
 /var/swap  file 2G   0B   -2
-
+```
 ###Operational Notes (Important)
 
 **⚠️ SD Card Wear**
