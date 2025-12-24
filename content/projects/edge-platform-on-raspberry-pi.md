@@ -80,8 +80,30 @@ The goal is not just to run containers — but to build:
 
 ### Phase 2 – Container Platform
 - Install Docker
+
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+newgrp docker
+
 - Validate container runtime
+
+docker run hello-world
+
+- Install Docker Compose plugin
+
+sudo apt install docker-compose -y
+docker-compose version
+
 - Define compose structure
+
+mkdir -p ~/edge-platform/{infra,apps,observability,docs}
+
+edge-platform/
+├── infra/              # reverse proxy, networking
+├── observability/      # prometheus, grafana
+├── apps/               # workloads (later)
+├── docs/               # local docs / diagrams
+
 
 ### Phase 3 – Networking & Security
 - Reverse proxy
@@ -210,6 +232,18 @@ NAME       TYPE SIZE USED PRIO
 - Prevents Docker from crashing silently
 
 We deliberately increased swap to 2 GB to prioritize platform stability over raw performance, acknowledging edge constraints while enabling realistic container workloads.
+
+---
+
+## 🧪 Platform Constraints
+
+This platform intentionally runs on a Raspberry Pi 3 with limited CPU, memory, and storage to simulate real-world edge constraints.
+
+Design decisions prioritize:
+- Low memory footprint
+- Minimal container count
+- Clear service ownership
+- Observability without over-provisioning
 
 ---
 
