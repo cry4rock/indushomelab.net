@@ -138,7 +138,7 @@ Images and diagrams will be added as the project progresses.
 
 ## 📘 Lessons Learned (living section)
 
-###📈 Increasing Swap Space on Raspberry Pi (Edge Platform Prerequisite)
+### 📈 Increasing Swap Space on Raspberry Pi (Edge Platform Prerequisite)
 
 **Why Swap Matters on Edge Devices**
 
@@ -178,7 +178,7 @@ Swap size	2 GB
 Swap file type	File-based
 Use case	Docker + observability
 
-###Step-by-Step: Increase Swap to 2 GB
+### Step-by-Step: Increase Swap to 2 GB
 
 **1️⃣ Disable current swap**
 ```shell
@@ -232,7 +232,7 @@ You should see:
 NAME       TYPE SIZE USED PRIO
 /var/swap  file 2G   0B   -2
 ```
-###Operational Notes (Important)
+### Operational Notes (Important)
 
 **⚠️ SD Card Wear**
 
