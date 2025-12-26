@@ -27,9 +27,12 @@ buildExpired = false
 
   comment = false
 
+  [params.mermaid]
+    enable = true
+
   [params.profileMode]
     enabled = true
-    title = "Indus Homelab"
+    title = "Indus' Homelab"
     subtitle = "Homelab · Platform Engineering · Observability · Automation"
     imageUrl = "/images/profile.png"
     imageWidth = 160
@@ -48,33 +51,23 @@ buildExpired = false
       name = "About"
       url = "/about/"
 
-  [[params.socialIcons]]
-    name = "github"
-    url = "https://github.com/cry4rock"
+    [[params.socialIcons]]
+      name = "github"
+      url = "https://github.com/cry4rock"
 
-  [[params.socialIcons]]
-    name = "linkedin"
-    url = "https://www.linkedin.com/in/indunil-thembuwana/"
+    [[params.socialIcons]]
+      name = "linkedin"
+      url = "https://www.linkedin.com/in/indunil-thembuwana/"
 
-  [[params.socialIcons]]
-    name = "rss"
-    url = "/index.xml"
-
-
-  [params.homeInfoParams]
-    Title = "Welcome to Indushomelab"
-    Content = """
-A hands-on technology lab exploring **platform engineering**, **edge computing**,
-**observability**, and **real-world infrastructure** — built on real hardware
-with real constraints.
-"""
+    [[params.socialIcons]]
+      name = "rss"
+      url = "/index.xml"
 
 [markup]
   [markup.highlight]
     noClasses = false
 
 [menu]
-
   [[menu.main]]
     identifier = "projects"
     name = "Projects"
