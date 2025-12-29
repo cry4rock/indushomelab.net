@@ -98,10 +98,10 @@ Mermaid diagram (logical):
 
 ```mermaid
 flowchart TD
-  User -->|HTTP| Traefik[Traefik (Ingress)]
+  User -->|HTTP| Traefik["Traefik (Ingress)"]
   subgraph Pi["Raspberry Pi 3 - Docker"]
-    Traefik --> App[hello-edge (whoami)]
-    NodeExp[Node Exporter] --> Prom[Prometheus (optional)]
+    Traefik --> App["hello-edge (whoami)"]
+    NodeExp["Node Exporter"] --> Prom["Prometheus (optional)"]
   end
   Traefik --> TraefikUI["Traefik Dashboard"]
 ```
