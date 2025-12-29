@@ -286,7 +286,7 @@ This repo documents a practical single-node edge platform suitable for learning 
 
 ## Appendix — Helpful host entries
 
-Add to your laptop's hosts file while testing:
+Add to your pc/laptop's hosts file while testing:
 
 ```text
 <PI-IP> hello-edge.pi traefik.pi
