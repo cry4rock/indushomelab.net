@@ -13,501 +13,289 @@ categories:
 
 ## 🚀 Project Overview
 
-This project documents the design and implementation of a **lightweight edge platform** built on a Raspberry Pi 3, inspired by modern Platform Engineering and SRE practices.
+This project captures a practical, reproducible edge platform built on a Raspberry Pi 3 Model B. It demonstrates platform-oriented practices (ingress, observability, minimal workloads) while remaining lightweight enough for constrained edge hardware.
 
-The goal is not just to run containers — but to build:
-- A **reliable edge platform**
-- With **observability baked in**
-- Fully **documented**
-- And easy to reproduce
+TL;DR: A single-node, container-based edge platform using Docker + Traefik for ingress and Prometheus/Grafana for observability. Designed for reproducibility and learning, not for production scale.
 
 ---
 
-## 🎯 Objectives
+## Table of contents
 
-- Build a production-inspired edge platform on Raspberry Pi 3
-- Run containerized workloads using Docker
-- Implement monitoring and observability
-- Expose services securely
-- Maintain Git-driven documentation
+- Overview
+- Goals
+- Hardware & Software
+- Quickstart (commands)
+- Architecture
+- Networking & Ingress (Traefik)
+- Observability (Node Exporter, Prometheus, Grafana)
+- Example workload (whoami)
+- Optimization & Swap
+- Logging & Persistence
+- Security, TLS & Limitations
+- Next steps
+- References
 
 ---
 
-## 🧠 Architecture Overview
+## 🎯 Goals
 
-**Core components:**
-- Raspberry Pi (Edge Node)
-- Docker & Docker Compose
-- Reverse Proxy (Traefik)
-- Monitoring (Prometheus + Grafana)
-- Logging (future)
-- GitHub + Hugo for documentation
-
-> Diagram will be added once the platform is stable.
+- Build a production-inspired, reproducible edge platform on Raspberry Pi 3
+- Run and route containerized workloads using a lightweight ingress
+- Provide minimal observability while conserving resources
+- Document the steps so the platform can be recreated via Git/Hugo
 
 ---
 
 ## 🧰 Hardware & Software
 
-### Hardware
-- ✅ Raspberry Pi 3 Model B
-- ✅ ARMv8 / 64-bit
-- ✅ Debian 12 (Bookworm)
-- ⚠️ 1 GB RAM
-- ⚠️ 16 GB SD card
-- ⚠️ 100 Mbps Ethernet
+Hardware
+- Raspberry Pi 3 Model B (1 GB RAM, 16 GB+ SD recommended)
 
-### Software
-- Raspberry Pi OS (64-bit)
-- Docker
-- Docker Compose
-- Traefik
-- Prometheus
-- Grafana
+Software (tested / recommended)
+- Raspberry Pi OS (64-bit, Debian 12)
+- Docker (Engine + Compose plugin)
+- Traefik (edge ingress)
+- Prometheus + Grafana (observability)
+- Prometheus Node Exporter (metrics)
+
+Notes: the Pi 3 is resource constrained — design choices below prioritize stability and low footprint.
 
 ---
 
-## 🛠️ Build Phases
+## Quickstart — Minimal commands
 
-### Phase 0 - Critical Fixes (Before Containers)
-- Increase swap from 512 MB to 2 GB (mandetory on Pi 3)
-- Reduce GPU memory (headless optimization)
+Run these on the Pi after flashing the OS and enabling SSH.
 
-### Phase 1 – Base OS & Access
-- Flash Raspberry Pi OS
-- Enable SSH
-- Secure access
-
-### Phase 2 – Container Platform
-- Install Docker
-```shell
+```bash
+# install Docker
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 newgrp docker
-```
-- Validate container runtime
-```shell
-docker run hello-world
-```
-- Install Docker Compose plugin
-```shell
-sudo apt install docker-compose -y
-docker-compose version
-```
-- Define compose structure
-```shell
-mkdir -p ~/edge-platform/{infra,apps,observability,docs}
+
+# install docker compose plugin (Debian)
+sudo apt update && sudo apt install -y docker-compose
+
+# project layout
+mkdir -p ~/edge-platform/{infra,workloads,observability,docs}
+cd ~/edge-platform
 ```
 
-```text
-edge-platform/
-├── infra/              # reverse proxy, networking
-├── observability/      # prometheus, grafana
-├── apps/               # workloads (later)
-├── docs/               # local docs / diagrams
+---
+
+## Architecture (single-node logical view)
+
+- Single Raspberry Pi running Docker as the host runtime
+- Traefik acts as the edge ingress and router for host-based routing
+- Observability: Node Exporter → (Prometheus) → Grafana
+- Workloads run as regular containers behind Traefik
+
+Logical traffic flow:
+1. Client → Traefik (port 80)
+2. Traefik matches host rule and proxies to container
+3. Metrics scraped from Node Exporter by Prometheus
+
+Mermaid diagram (logical):
+
+```mermaid
+flowchart TD
+  User -->|HTTP| Traefik[Traefik (Ingress)]
+  subgraph Pi["Raspberry Pi 3 - Docker"]
+    Traefik --> App[hello-edge (whoami)]
+    NodeExp[Node Exporter] --> Prom[Prometheus (optional)]
+  end
+  Traefik --> TraefikUI["Traefik Dashboard"]
 ```
 
-### Phase 3 – Networking & Security
-- Reverse proxy
-  
-  For this we use Traefik container.
-  
-  Traefik is:
-    - Lightweight
-    - ARM friendly
-    - Production-relevent
-  
-  #### Create Traefik stack
-```shell
-cd ~/edge-platform/infra
-mkdir traefik && cd traefik
-nano docker-compose.yml
-```
+---
+
+## Networking & Ingress (Traefik)
+
+Use Traefik as the lightweight ingress. For local/homelab use, enable the dashboard only on the local network and avoid `--api.insecure=true` on any remotely accessible device.
+
+Minimal docker-compose for Traefik (infra/traefik/docker-compose.yml):
 
 ```yaml
-version: "3.9"
+version: '3.9'
 services:
   traefik:
     image: traefik:v3.0
-    container_name: traefik
-    command:
-      - "--api.dashboard=true"
-      - "--api.insecure=true"  # Changed to true for easier local access
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
+    restart: unless-stopped
     ports:
-      - "80:80"
+      - '80:80'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --api.dashboard=true
     networks:
       - traefik
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.pi`)" 
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.entrypoints=web"  # Added entrypoint
 networks:
   traefik:
     name: traefik
 ```
 
-```shell
-docker compose up -d
-docker ps
-```
-- TLS (later)
-- Service exposure
-Test in browser:
-```text
-http://traefik.pi/dashboard/
-```
+Notes:
+- For development you can access the dashboard locally; for production, secure the dashboard with authentication and enable TLS/ACME.
+- Traefik will pick up containers that are labeled `traefik.enable=true`.
 
-If above not accessible via your PC or Laptop browser, we need to add the host configurations. Follow the below instructions.
+Host file example (on your laptop) to resolve hostnames used in examples:
 
-***Linux / macOS***
-```shell
-sudo nano /etc/hosts
+```
+<PI-IP> hello-edge.pi traefik.pi
 ```
 
-***Windows (Run Notepad as Admin)***
-```txt
-C:\Windows\System32\drivers\etc\hosts
-```
+---
 
-Add:
-```text
-<raspberry-pi-ip>   traefik.pi
-```
+## Observability
 
-Save--> close --> restart browser
+Start small: deploy Prometheus Node Exporter to expose machine metrics. If you later add Prometheus and Grafana, keep retention short to limit storage.
 
-Now test:
-```text
-http://traefik.pi/dashboard/
-```
-
-### Phase 4 – Observability
-- Create observability directory
-```shell
-cd ~/edge-platform
-mkdir -p observability/node-exporter
-cd observability/node-exporter
-```
-- Metrics collection
-  For metrics collection we deploy node-exporter docker container.
-
-```shell
-nano docker-compose.yml
-```
+node-exporter compose (observability/node-exporter/docker-compose.yml):
 
 ```yaml
-version: "3.9"
-
+version: '3.9'
 services:
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: node-exporter
     restart: unless-stopped
     pid: host
-    command:
-      - '--path.rootfs=/host'
+    command: ['--path.rootfs=/host']
     volumes:
       - '/:/host:ro,rslave'
     ports:
-      - "9100:9100"
-```
-Start Node Exporter
-```shell
-docker-compose up -d
-docker ps
-```
-Verify Metrics Endpoint
-```text
-http://<pi-ip>:9100/metrics
-```
-You should see ***raw Prometheus metrics text***.
-- Dashboards
-- Alerts (future)
-
-#### System Observability – Node Exporter
-
-To establish baseline observability without overloading the device, Prometheus Node Exporter was deployed as the first monitoring component. This provides real-time visibility into CPU, memory, disk, and network metrics while maintaining a minimal resource footprint suitable for edge devices.
-
-> We’ll deploy a tiny edge workload and expose it cleanly through Traefik, exactly how you’d expect in a real edge platform-engineering setup.
-
-### 🚀 First Edge Workload
-
-“Hello Edge” app behind Traefik
-
-***Goal:***
-- Simple container
-- No heavy frameworks
-- Routed via Traefik
-- Accessible via hostname
-- Zero ports exposed
-
-***Create App Directory***
-```shell
-cd ~/edge-platform
-mkdir -p workloads/hello-edge
-cd workloads/hello-edge
+      - '9100:9100'
 ```
 
-***Create docker-compose.yaml***
-```shell
-nano docker-compose.yml
+Verify:
+
 ```
+http://<PI-IP>:9100/metrics
+```
+
+Prometheus/Grafana: run them only if you can allocate disk for time-series data. Consider remote write or short retention to avoid filling the SD card.
+
+---
+
+## Example workload — hello-edge
+
+This demonstrates host-based routing with Traefik using the `traefik/whoami` image.
+
+workloads/hello-edge/docker-compose.yml:
 
 ```yaml
-version: "3.9"
+version: '3.9'
 services:
   hello-edge:
     image: traefik/whoami
-    container_name: hello-edge
     restart: unless-stopped
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hello-edge.rule=Host(`hello-edge.pi`)"
-      - "traefik.http.routers.hello-edge.entrypoints=web"
-      - "traefik.http.services.hello-edge.loadbalancer.server.port=80"
+      - traefik.enable=true
+      - traefik.http.routers.hello-edge.rule=Host(`hello-edge.pi`)
+      - traefik.http.routers.hello-edge.entrypoints=web
+      - traefik.http.services.hello-edge.loadbalancer.server.port=80
     networks:
       - traefik
-
 networks:
   traefik:
-    external: true  # Use external since traefik network already exists
+    external: true
 ```
 
-***Deploy the Workload***
-```shell
-docker-compose up -d
-docker ps
+Deploy:
+
+```bash
+cd ~/edge-platform/infra/traefik && docker compose up -d
+cd ~/edge-platform/workloads/hello-edge && docker compose up -d
 ```
 
-***Update Local DNS (Laptop/Desktop)***
-Linux/macOS:
-```shell
-sudo nano /etc/hosts
-```
-
-Windows:
-```text
-C:\Windows\System32\drivers\etc\hosts
-```
-
-Add:
-```text
-<PI-IP> hello-edge.pi
-```
-
-***Access the app***
-Open browser:
-```text
-http://hello-edge.pi
-```
-
-You shoul see output like:
-```yaml
-Hostname: hello-edge
-IP: 172.20.0.x
-Headers:
-  Host: hello-edge.localhost
-  X-Forwarded-For: ...
-```
-
-#### First Edge Workload Deployment
-
-A lightweight containerized workload was deployed behind Traefik to validate ingress routing, service discovery, and network isolation on the edge platform. The workload uses Traefik's `whoami` image to demonstrate request flow, headers, and routing behavior without introducing application complexity.
+Open `http://hello-edge.pi` (or use the Pi IP and Host header) to validate routing.
 
 ---
 
-# 🧱 Architecture diagrams
+## Optimization & Swap
 
-First Edge Workload Architecture:
-```scss
-User
- └── HTTP(S)
-      └── Traefik (Edge Ingress)
-            └── hello-edge (sample app)
-```
+On a Pi 3, increase swap to improve stability when running Docker and observability tooling. Swap reduces OOM risk at the expense of SD card wear.
 
-🏗️ Indushomelab Edge Platform – Architecture Diagram v1
+Quick steps:
 
-🎯 Purpose of v1
-- Single-node Edge Platform on Raspberry Pi 3
-- Central ingress using Traefik
-- Containerized edge workloads
-- Clear separation: Infra / Workloads / Observability
-- Designed to scale later (multi-node, TLS, auth, GitOps)
-
-📐 Architecture Diagram (Logical View)
-
-```mermaid
-flowchart TD
-    User[User Laptop / Browser] -->|HTTP :80<br>Host-based routing| Traefik
-
-    subgraph Raspberry_Pi_3["Raspberry Pi 3 (Debian 12)"]
-        subgraph Docker["Docker Runtime"]
-            Traefik["Traefik v3<br>Edge Ingress"]
-            Hello["hello-edge<br>(whoami app)"]
-            NodeExp["Node Exporter"]
-        end
-
-        Traefik -->|Docker Provider| Hello
-        NodeExp -->|Metrics| Prometheus[(Future)]
-    end
-
-    Traefik -->|/dashboard| TraefikUI["Traefik Dashboard"]
-```
-> Architecture Diagram v1 – Single-node Edge Platform using Traefik as ingress, running on Raspberry Pi 3 with containerized edge workloads.
-
-#### 🧭 Traffic Flow:
-1. User accesses http://hello-edge.pi
-2. DNS resolves to Raspberry Pi IP
-3. Request hits Traefik on port 80
-4. Traefik matches Host rule
-5. Traffic forwarded to hello-edge
-6. Response returned via Traefik
-
----
-
-## 📸 Gallery
-
-Images and diagrams will be added as the project progresses.
-
----
-
-## 📘 Lessons Learned (living section)
-
-### 📈 Increasing Swap Space on Raspberry Pi (Edge Platform Prerequisite)
-
-**Why Swap Matters on Edge Devices**
-
-The Raspberry Pi 3 is constrained by 1 GB of RAM, which is insufficient for:
-
-- Docker daemon
-- Multiple containers
-- Observability tooling (Prometheus, Grafana)
-
-Swap acts as a pressure relief valve, preventing:
-
-- OOM (Out-Of-Memory) kills
-- Random container crashes
-- System lockups under load
-
-> ⚠️ Swap is not a performance booster — it is a stability mechanism.
-
-For this edge platform, increasing swap is mandatory.
-
-**Current System State**
-```shell
-free -h
-```
-
-Typical output before change:
-```text
-              total        used        free
-Mem:           982Mi        380Mi        120Mi
-Swap:          512Mi        138Mi        374Mi
-```
-
-The default 512 MB swap is insufficient for containerized workloads.
-
-**Target Configuration**
-Setting		Value
-Swap size	2 GB
-Swap file type	File-based
-Use case	Docker + observability
-
-### Step-by-Step: Increase Swap to 2 GB
-
-**1️⃣ Disable current swap**
-```shell
+```bash
 sudo dphys-swapfile swapoff
-```
-**2️⃣ Edit swap configuration**
-```shell
-sudo nano /etc/dphys-swapfile
-```
-Locate:
-```yaml
-CONF_SWAPSIZE=512
-```
-
-Change to:
-```yaml
-CONF_SWAPSIZE=2048
-```
-
-Save and exit (CTRL+O, ENTER, CTRL+X).
-
-**3️⃣ Recreate the swap file**
-```shell
+sudo sed -i 's/CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
 sudo dphys-swapfile setup
-```
-
-This recreates the swap file with the new size.
-
-**4️⃣ Re-enable swap**
-```shell
 sudo dphys-swapfile swapon
-```
-**5️⃣ Verify swap is active**
-```shell
 free -h
 ```
 
-Expected output:
-```text
-              total        used        free
-Mem:           982Mi        380Mi        120Mi
-Swap:          2.0Gi        0Mi          2.0Gi
-```
-**Validation Checks**
-```shell
-swapon --show
-```
-
-You should see:
-```text
-NAME       TYPE SIZE USED PRIO
-/var/swap  file 2G   0B   -2
-```
-### Operational Notes (Important)
-
-**⚠️ SD Card Wear**
-
-- Swap increases write activity
-- Acceptable for homelab / edge experiments
-- Not recommended for heavy production writes
-
-**🧠 Memory Behavior**
-
-- Linux will prefer RAM first
-- Swap is used only under pressure
-- Prevents Docker from crashing silently
-
-> We deliberately increased swap to 2 GB to prioritize platform stability over raw performance, acknowledging edge constraints while enabling realistic container workloads.
+Operational notes:
+- Use swap to improve reliability, not performance.
+- Consider using an external SSD or overlayfs for more write endurance if you plan to run Prometheus long-term.
 
 ---
 
-## 🧪 Platform Constraints
+## Logging & Persistence
 
-This platform intentionally runs on a Raspberry Pi 3 with limited CPU, memory, and storage to simulate real-world edge constraints.
+Centralized logging on a Pi should be lightweight. Recommended approach for homelab:
 
-Design decisions prioritize:
-- Low memory footprint
-- Minimal container count
-- Clear service ownership
-- Observability without over-provisioning
+- Loki + Promtail: lightweight, integrates with Grafana, and is designed for short-term retention.
+- Alternatively, forward logs to a central server (if available) to avoid local disk pressure.
+
+Minimal Promtail configuration will tail container logs and push to a Loki instance running on another host or locally (if you can spare disk).
 
 ---
 
-## 🔗 References
+## Security, TLS & Limitations
 
-- Docker documentation
-- Prometheus
-- Grafana
-- Platform Engineering concepts
+Security recommendations:
+- Do not enable Traefik dashboard insecurely on WAN-accessible networks.
+- Use local DNS or /etc/hosts for name resolution in homelab setups.
+- For TLS: use Traefik ACME when you have a routable domain, or use a local CA (mkcert) for development.
+
+Limitations of this design:
+- Single-node: no HA, no scheduler beyond Docker
+- Storage: SD cards have limited endurance
+- Compute: Pi 3 CPU and RAM restricts workload complexity
+
+---
+
+## Next steps / Roadmap
+
+Short term:
+- Add Prometheus + Grafana with minimal retention and dashboards for Node Exporter
+- Add Loki + Promtail for logs (optional)
+- Harden Traefik configuration (basic auth)
+
+Medium term:
+- Migrate to Pi 4 or multi-node cluster for resilience
+- Introduce GitOps for workload deployments
+
+---
+
+## Conclusion
+
+This repo documents a practical single-node edge platform suitable for learning and homelab experimentation. It shows how to run container workloads behind an ingress, collect system metrics, and operate within the constraints of edge hardware.
+
+If you want, I can:
+
+- Add complete Prometheus/Grafana compose files and a minimal Grafana dashboard
+- Add a Loki + Promtail example for logs
+- Harden Traefik configuration (basic auth + TLS)
+
+---
+
+## References
+
+- Docker: https://docs.docker.com
+- Traefik: https://doc.traefik.io/traefik/
+- Prometheus: https://prometheus.io
+- Grafana: https://grafana.com
+
+## Appendix — Helpful host entries
+
+Add to your laptop's hosts file while testing:
+
+```
+<PI-IP> hello-edge.pi traefik.pi
+```
+<PI-IP> hello-edge.pi
 
