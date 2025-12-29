@@ -275,12 +275,6 @@ Medium term:
 
 This repo documents a practical single-node edge platform suitable for learning and homelab experimentation. It shows how to run container workloads behind an ingress, collect system metrics, and operate within the constraints of edge hardware.
 
-If you want, I can:
-
-- Add complete Prometheus/Grafana compose files and a minimal Grafana dashboard
-- Add a Loki + Promtail example for logs
-- Harden Traefik configuration (basic auth + TLS)
-
 ---
 
 ## References
