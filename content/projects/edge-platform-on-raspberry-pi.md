@@ -142,7 +142,7 @@ Notes:
 
 Host file example (on your laptop) to resolve hostnames used in examples:
 
-```
+```text
 <PI-IP> hello-edge.pi traefik.pi
 ```
 
