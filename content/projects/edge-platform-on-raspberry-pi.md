@@ -170,7 +170,7 @@ services:
 
 Verify:
 
-```
+```text
 http://<PI-IP>:9100/metrics
 ```
 
@@ -294,7 +294,7 @@ If you want, I can:
 
 Add to your laptop's hosts file while testing:
 
-```
+```text
 <PI-IP> hello-edge.pi traefik.pi
 ```
 <PI-IP> hello-edge.pi
