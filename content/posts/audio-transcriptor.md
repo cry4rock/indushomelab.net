@@ -7,8 +7,6 @@ categories: ["Tutorials", "Python"]
 summary: "A walkthrough of a lightweight Python script that converts audio files into text using SpeechRecognition and pydub."
 ---
 
-# Audio Transcriptor — Convert Audio to Text with Python
-
 This post explains a compact Python script in this repository that converts audio files (MP3, WAV, M4A, etc.) into text using the `SpeechRecognition` library and `pydub` for audio preprocessing.
 
 ## Why this is useful
