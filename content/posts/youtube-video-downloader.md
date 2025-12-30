@@ -44,7 +44,7 @@ pip install --upgrade yt-dlp
 
 ## How to use
 
-1. Save the script as `youtubevideodownloder.py` in the same folder as this Markdown (or anywhere you like).
+1. Save the script as `youtubevideodownloder.py`.
 2. Run the script:
 
 ```bash
