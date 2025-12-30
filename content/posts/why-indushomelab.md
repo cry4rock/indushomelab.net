@@ -1,6 +1,6 @@
 ---
 title: "Why Indus' Homelab"
-date: 2025-01-01
+date: 2025-12-23
 tags: ["homelab", "platform-engineering"]
 ---
 
