@@ -5,6 +5,7 @@ date: 2025-12-30
 draft: false
 categories: ["Python", "Tutorial"]
 tags: ["youtube", "mp3", "converter", "yt-dlp", "ffmpeg", "automation"]
+author: "Indunil Thembuwana"
 ---
 
 ## Introduction
