@@ -13,13 +13,6 @@ categories:
     - tools
 slug: "youtube-video-downloader"
 author: "Indunil Thembuwana"
----
-
-# YouTube Video Downloader (Python + yt-dlp)
-
-A small, focused Python script to download YouTube videos (best quality) using `yt-dlp`. Paste this into a file and use it on your machine — instructions and tips included.
-
----
 
 ## Why this script
 
