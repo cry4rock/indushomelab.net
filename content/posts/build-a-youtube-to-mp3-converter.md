@@ -282,7 +282,7 @@ if __name__ == "__main__":
    ```
 
 2. **Enter the YouTube URL when prompted:**
-   ```
+   ```text
    Enter the YouTube video URL: https://www.youtube.com/watch?v=dQw4w9WgXcQ
    ```
 
