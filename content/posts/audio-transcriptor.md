@@ -1,5 +1,5 @@
 ---
-title: "Audio Transcriptor — Convert Audio to Text with Python"
+title: "Audio Transcriptor - Convert Audio to Text with Python"
 date: 2025-12-30T12:00:00+00:00
 draft: false
 tags: ["python", "speech-recognition", "audio", "tutorial"]
