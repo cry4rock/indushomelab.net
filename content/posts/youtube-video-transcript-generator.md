@@ -322,7 +322,7 @@ python transcript_generator.py "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 ### Example Output
 
-```
+```text
 ==================================================
 YouTube Transcript Extractor
 ==================================================
