@@ -71,7 +71,7 @@ Proxmox API (192.168.1.14:8006)
 
 In the Proxmox web UI:
 
-```
+```text
 Datacenter → Permissions → API Tokens → Add
   User:               root@pam
   Token ID:           proxmox_api_token_id
@@ -80,7 +80,7 @@ Datacenter → Permissions → API Tokens → Add
 
 Then assign Administrator permissions:
 
-```
+```text
 Datacenter → Permissions → Add → API Token Permission
   Path:  /
   Token: root@pam!proxmox_api_token_id
@@ -143,7 +143,7 @@ pvesm set local --content backup,iso,vztmpl,snippets
 
 ## Step 4 — Project Structure
 
-```
+```text
 proxmox-terraform/
 ├── main.tf
 ├── cloud-init.yaml
