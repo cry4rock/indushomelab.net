@@ -40,7 +40,7 @@ Proxmox API (192.168.1.14:8006)
 ```
 
 **Tools used:**
-- **Proxmox VE 8.4** — hypervisor
+- **Proxmox VE 9.2.2** — hypervisor
 - **Terraform** with `bpg/proxmox` provider — VM provisioning
 - **cloud-init** — first-boot configuration
 - **Ansible** — IBM MQ installation and configuration
@@ -52,7 +52,7 @@ Proxmox API (192.168.1.14:8006)
 
 ### On the Proxmox server
 
-- Proxmox VE 8.x installed
+- Proxmox VE 9.x.x installed
 - An Ubuntu 24.04 cloud-init template (VM ID 9000)
 - Snippets enabled on local storage
 - An API token with Administrator permissions
@@ -97,7 +97,7 @@ curl -sk https://192.168.1.14:8006/api2/json/version \
 You should get a JSON response like:
 
 ```json
-{"data":{"version":"8.4.19","release":"8.4"}}
+{"data":{"release":"9.2","version":"9.2.2","repoid":"b9984c6d90a4bd80"}}
 ```
 
 ---
