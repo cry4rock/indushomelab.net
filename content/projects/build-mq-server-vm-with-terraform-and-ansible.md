@@ -26,7 +26,7 @@ In this post I'll walk through how I fully automated the provisioning of an IBM 
 
 ## Architecture Overview
 
-```
+```text
 homelab02 (Terraform + Ansible host)
     │
     │  terraform apply
